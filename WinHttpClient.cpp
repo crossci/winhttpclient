@@ -4,24 +4,25 @@ WinHttpClient::WinHttpClient()
 	:m_sessionHandle(NULL),
 	m_connect(NULL)
 {
-	if (m_sessionHandle != NULL)
-	{
-		::WinHttpCloseHandle(m_sessionHandle);
-	}
-	if (m_connect)
-	{
-		::WinHttpCloseHandle(m_connect);
-	}
+	clear();
 }
-bool WinHttpClient::openSession()
+
+WinHttpClient::~WinHttpClient()
+{
+	clear();
+}
+bool WinHttpClient::openSession(bool async)
 {
 	if (m_sessionHandle == NULL)
 	{
+		int flag = 0;
+		if (async)
+			flag = WINHTTP_FLAG_ASYNC;
 		m_sessionHandle = ::WinHttpOpen(L"WinHttpClient",
 			WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 			WINHTTP_NO_PROXY_NAME,
 			WINHTTP_NO_PROXY_BYPASS,
-			0);
+			flag);
 		if (m_sessionHandle == NULL)
 		{
 			//m_dwLastError = ::GetLastError();
@@ -216,7 +217,7 @@ void WinHttpClient::disableAutoRedirect(HINTERNET hRequest)
 	DWORD dwDisableFeature = WINHTTP_DISABLE_REDIRECTS;
 	::WinHttpSetOption(hRequest, WINHTTP_OPTION_DISABLE_FEATURE, &dwDisableFeature, sizeof(dwDisableFeature));
 }
-bool WinHttpClient::sendRequest(HINTERNET hRequest)
+bool WinHttpClient::sendRequest(HINTERNET hRequest, void* param)
 {
 	if (::WinHttpSendRequest(hRequest,
 		WINHTTP_NO_ADDITIONAL_HEADERS,
@@ -224,7 +225,7 @@ bool WinHttpClient::sendRequest(HINTERNET hRequest)
 		WINHTTP_NO_REQUEST_DATA,
 		0,
 		0,
-		NULL))
+		(DWORD_PTR)param))
 	{
 		return true;
 	}
@@ -290,6 +291,11 @@ char* WinHttpClient::readData(HINTERNET hRequest, DWORD len)
 	}
 	return ret;
 }
+
+void WinHttpClient::setAsyncCallback(HINTERNET hRequest, WINHTTP_STATUS_CALLBACK lpfnInternetCallback)
+{
+	::WinHttpSetStatusCallback(hRequest, lpfnInternetCallback, WINHTTP_CALLBACK_FLAG_ALL_NOTIFICATIONS, 0);
+}
 wstring WinHttpClient::queryHeaders(HINTERNET hRequest, int queryType)
 {
 	DWORD dwSize = 0;
@@ -320,4 +326,16 @@ wstring WinHttpClient::queryHeaders(HINTERNET hRequest, int queryType)
 		}
 	}
 	return ret;
+}
+
+void WinHttpClient::clear()
+{
+	if (m_sessionHandle != NULL)
+	{
+		::WinHttpCloseHandle(m_sessionHandle);
+	}
+	if (m_connect)
+	{
+		::WinHttpCloseHandle(m_connect);
+	}
 }
