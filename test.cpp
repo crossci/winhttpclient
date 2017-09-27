@@ -51,7 +51,7 @@ void CALLBACK RequesterStatusCallback(
 		}
 		else
 		{
-			WinHttpCloseHandle(hInternet);
+			//WinHttpCloseHandle(hInternet);
 			delete client;
 			fclose(pFile);
 		}
@@ -64,8 +64,10 @@ void CALLBACK RequesterStatusCallback(
 		break;
 	case WINHTTP_CALLBACK_STATUS_REQUEST_ERROR:
 		//pRequester->OnRequestError((LPWINHTTP_ASYNC_RESULT)lpvStatusInformation);
+		WinHttpCloseHandle(hInternet);
 		break;
 	case WINHTTP_CALLBACK_STATUS_HANDLE_CLOSING:
+		WinHttpCloseHandle(hInternet);
 		//pRequester->OnHandleClosing(hInternet);
 		//pRequester->m_hRequest = NULL;
 		
